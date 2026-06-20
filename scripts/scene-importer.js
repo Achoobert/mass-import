@@ -13,7 +13,17 @@ export class SceneImporter {
     };
 
     // --- LOAD SAVED PREFERENCE ---
-    const lastFolder = game.user.getFlag('mass-import', 'lastSceneFolder') || '';
+    const lastScenePref = game.user.getFlag('mass-import', 'lastSceneFolder');
+    let lastFolder = '';
+    let lastSource = 'data';
+    let lastBucket = '';
+    if (typeof lastScenePref === 'string') {
+      lastFolder = lastScenePref;
+    } else if (lastScenePref && typeof lastScenePref === 'object') {
+      lastFolder = lastScenePref.path || '';
+      lastSource = lastScenePref.activeSource || 'data';
+      lastBucket = lastScenePref.activeBucket || '';
+    }
 
     // 1. Create Instance
     const dialog = new foundry.applications.api.DialogV2({
@@ -51,6 +61,8 @@ export class SceneImporter {
                 sourceData.path = lastFolder;
             }
         }
+      sourceData.activeSource = lastSource;
+      sourceData.activeBucket = lastBucket;
 
         // Bind FilePicker
         Common.bindFilePicker(html, ".picker-button", "input[name='folder-path']", "folder", sourceData);
@@ -75,7 +87,11 @@ export class SceneImporter {
 
     try {
       // --- SAVE LAST USED FOLDER ---
-      await game.user.setFlag('mass-import', 'lastSceneFolder', folderPath);
+      await game.user.setFlag('mass-import', 'lastSceneFolder', {
+        path: folderPath,
+        activeSource: sourceData.activeSource,
+        activeBucket: sourceData.activeBucket
+      });
 
       // Find or Create Folder
       let folder = game.folders.find(f => f.name === folderName && f.type === "Scene");
